@@ -1,2 +1,4 @@
 pymc-marketing==1.3.0
 matplotlib
+streamlit
+plotly

@@ -15,18 +15,21 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / "results"
 RUNS = {
-    "PyMC-Marketing": "roi_pymc.csv",
-    "PyMC-Marketing + lift test": "roi_pymc_calibrated.csv",
+    "PyMC (Hill)": "roi_pymc.csv",
+    "PyMC (Hill) + lift test": "roi_pymc_calibrated.csv",
+    "PyMC (Logistic)": "roi_pymc_logistic.csv",
     "Meridian": "roi_meridian.csv",
     "Meridian + ROI prior": "roi_meridian_calibrated.csv",
 }
-COLORS = ["#4C78A8", "#9ECAE9", "#F58518", "#FFBF79"]
+COLORS = ["#4C78A8", "#9ECAE9", "#B6C9DD", "#F58518", "#FFBF79"]
 
 
 def main() -> None:
     truth = pd.read_csv(ROOT / "data" / "ground_truth.csv")[["channel", "true_roi"]]
     table = truth.copy()
-    runs = {k: pd.read_csv(RES / v) for k, v in RUNS.items() if (RES / v).exists()}
+    # align every run to the ground-truth channel order
+    runs = {k: pd.read_csv(RES / v).set_index("channel").loc[truth.channel].reset_index()
+            for k, v in RUNS.items() if (RES / v).exists()}
     for name, r in runs.items():
         table[name] = [f"{m:.2f} [{lo:.2f}, {hi:.2f}]"
                        for m, lo, hi in zip(r.roi_mean, r.roi_lo, r.roi_hi)]
@@ -38,9 +41,9 @@ def main() -> None:
     for name, r in runs.items():
         mae = np.mean(np.abs(r.roi_mean.values - truth.true_roi.values))
         covered = np.sum((truth.true_roi.values >= r.roi_lo) & (truth.true_roi.values <= r.roi_hi))
-        print(f"{name:28s} MAE={mae:.2f}  truth inside 90% interval: {covered}/4 channels")
+        print(f"{name:28s} MAE={mae:.2f}  truth inside 90% interval: {covered}/{len(truth)} channels")
 
-    fig, ax = plt.subplots(figsize=(9, 4.5))
+    fig, ax = plt.subplots(figsize=(11, 4.8))
     x = np.arange(len(truth))
     w = 0.8 / max(len(runs), 1)
     for i, (name, r) in enumerate(runs.items()):
