@@ -1,0 +1,2 @@
+google-meridian==1.5.2
+arviz<1
