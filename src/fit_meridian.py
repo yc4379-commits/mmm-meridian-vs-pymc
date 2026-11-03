@@ -23,8 +23,8 @@ from meridian.data.data_frame_input_data_builder import DataFrameInputDataBuilde
 from meridian.model import model, prior_distribution, spec
 
 ROOT = Path(__file__).resolve().parents[1]
-MEDIA = ["tv", "ooh", "social", "search", "tiktok"]
-MEDIA_UNITS = ["tv_grp", "ooh_grp", "social_impressions", "search_impressions", "tiktok_impressions"]
+MEDIA = ["tv", "ooh", "youtube", "search", "tiktok"]
+MEDIA_UNITS = ["tv_grp", "ooh_grp", "youtube_impressions", "search_impressions", "tiktok_impressions"]
 # OOH could also enter as reach & frequency (DataFrameInputDataBuilder.with_reach), which
 # lets Meridian estimate an optimal frequency; that mode exceeded this sandbox's 7 GB of RAM,
 # so OOH enters as GRPs (= reach x frequency) here.

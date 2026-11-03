@@ -1,7 +1,7 @@
 """Simulate geo-level weekly marketing data with a known ground truth.
 
 A subscription dating app runs paid media in 10 US DMAs for two years:
-TV and OOH (bought in GRPs, in concentrated flights) plus Social, Search and
+TV and OOH (bought in GRPs, in concentrated flights) plus YouTube, Search and
 TikTok (always-on digital, bought on CPM). Every channel has a known carryover
 (geometric adstock) and a known diminishing-returns curve (Hill saturation), so
 we can check how well each MMM package recovers the true ROI.
@@ -20,27 +20,27 @@ import pandas as pd
 SEED = 42
 N_GEOS = 10
 N_WEEKS = 104
-CHANNELS = ["tv", "ooh", "social", "search", "tiktok"]
+CHANNELS = ["tv", "ooh", "youtube", "search", "tiktok"]
 
 # ---------------------------------------------------------------------------
 # Ground-truth media parameters. Assumptions informed by:
 # - TV has a long tail (slow decay) and needs repeated exposure (S-shaped);
 # - OOH works mostly while it is up (short carryover);
 # - Search captures existing demand: almost no carryover, saturates quickly (C-shaped);
-# - Social / TikTok sit in between.
+# - YouTube / TikTok sit in between.
 # alpha = weekly adstock retention (half-life = ln 0.5 / ln alpha),
 # ec = Hill half-saturation point (share of the DMA's peak adstocked media),
 # slope = Hill shape (1 = C-shape, >1 = S-shape), beta = effect size.
 TRUTH = {
     "tv":     {"alpha": 0.60, "ec": 0.50, "slope": 2.0, "beta": 1.7},
     "ooh":    {"alpha": 0.20, "ec": 0.40, "slope": 1.5, "beta": 1.4},
-    "social": {"alpha": 0.30, "ec": 0.40, "slope": 1.5, "beta": 0.7},
+    "youtube": {"alpha": 0.30, "ec": 0.40, "slope": 1.5, "beta": 0.7},
     "search": {"alpha": 0.10, "ec": 0.30, "slope": 1.0, "beta": 1.1},
     "tiktok": {"alpha": 0.25, "ec": 0.60, "slope": 1.0, "beta": 0.4},
 }
 # Average weekly spend per DMA (USD) for always-on digital channels
-DIGITAL_SPEND = {"social": 25_000, "search": 20_000, "tiktok": 15_000}
-CPM = {"social": 9.0, "search": 35.0, "tiktok": 7.0}  # cost per 1,000 impressions
+DIGITAL_SPEND = {"youtube": 25_000, "search": 20_000, "tiktok": 15_000}
+CPM = {"youtube": 9.0, "search": 35.0, "tiktok": 7.0}  # cost per 1,000 impressions
 # Offline buying: cost per rating point (scales with market size)
 CPP = {"tv": 700.0, "ooh": 220.0}
 # TV flights (start week, length in weeks): concentrated bursts around the

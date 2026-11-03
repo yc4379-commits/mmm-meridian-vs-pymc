@@ -39,7 +39,7 @@ are highly correlated with unemployment, which stands in for the macro environme
 |---|---|---|---|---|---|
 | TV | GRPs (cost per point) | **Concentrated flights of 3–6 weeks** around January, Valentine's, spring and fall | 0.60 · 1.4 wk | **S-shape** (s = 2) | Long tail; needs repeated exposure before it works |
 | OOH | Reach × frequency → GRPs | Two campaigns a year, 6–8 weeks | 0.20 · 0.4 wk | Mild S (s = 1.5) | Works mainly while the boards are up |
-| Social | Impressions (CPM) | Always-on with a bi-annual rhythm | 0.30 · 0.6 wk | Mild S (s = 1.5) | Mix of brand and performance |
+| YouTube | Impressions (CPM) | Always-on with a bi-annual rhythm | 0.30 · 0.6 wk | Mild S (s = 1.5) | Online video: brand building with some direct response |
 | Search | Impressions (CPM) | Always-on | 0.10 · 0.3 wk | **C-shape** (s = 1) | Captures existing demand, saturates fast |
 | TikTok | Impressions (CPM) | Always-on | 0.25 · 0.5 wk | C-shape (s = 1) | Short-lived attention |
 
@@ -55,7 +55,7 @@ True ROI = total channel contribution / total spend (see `data/ground_truth.csv`
 |---|---|---|---|---|---|
 | TV | 1.40 | 0.60 | 1.4 | 0.5 | 2.0 |
 | OOH | 0.80 | 0.20 | 0.4 | 0.4 | 1.5 |
-| Social | 0.92 | 0.30 | 0.6 | 0.4 | 1.5 |
+| YouTube | 0.92 | 0.30 | 0.6 | 0.4 | 1.5 |
 | Search | 1.77 | 0.10 | 0.3 | 0.3 | 1.0 |
 | TikTok | 0.53 | 0.25 | 0.5 | 0.6 | 1.0 |
 
@@ -137,7 +137,7 @@ Posterior mean ROI with 90% credible intervals (`results/roi_comparison.csv`):
 |---|---|---|---|---|---|---|
 | TV | **1.40** | 1.46 [1.40, 1.51] | 1.46 [1.40, 1.52] | 1.45 [1.40, 1.50] | 1.43 [1.37, 1.49] | 1.43 [1.37, 1.49] |
 | OOH | **0.80** | 0.82 [0.72, 0.92] | 0.82 [0.72, 0.93] | 0.85 [0.73, 0.96] | 0.72 [0.62, 0.82] | 0.72 [0.62, 0.82] |
-| Social | **0.92** | 1.09 [0.68, 1.79] | 1.11 [0.69, 1.80] | 0.74 [0.55, 0.95] | 1.76 [1.09, 2.99] | 1.73 [1.08, 3.02] |
+| YouTube | **0.92** | 1.09 [0.68, 1.79] | 1.11 [0.69, 1.80] | 0.74 [0.55, 0.95] | 1.76 [1.09, 2.99] | 1.73 [1.08, 3.02] |
 | Search | **1.77** | 0.84 [0.61, 1.16] | 0.77 [0.61, 1.00] | 0.81 [0.67, 0.98] | 1.42 [1.08, 1.87] | 1.63 [1.33, 1.99] |
 | TikTok | **0.53** | 0.54 [0.15, 1.24] | 0.62 [0.15, 1.50] | 0.33 [0.13, 0.61] | 1.44 [0.56, 3.02] | 1.48 [0.59, 3.21] |
 | Mean abs. error | | 0.24 | 0.27 | 0.29 | 0.44 | 0.40 |
@@ -152,7 +152,7 @@ autocorrelation once DMAs are summed).
 
 1. **Flighted channels are easy, always-on channels are hard.** Every model recovers TV and OOH closely:
    their bursts create clean on/off variation. Always-on digital channels move together with the baseline,
-   so their intervals are wide and the models disagree (Social, TikTok).
+   so their intervals are wide and the models disagree (YouTube, TikTok).
 2. **Search is the hard case, and it shows the difference between average and marginal ROI.** Search's
    true response is C-shaped and already saturated at current spend: the *average* ROI is 1.77 but the
    next dollar returns much less. The +30% scale-up lift test measures that *marginal* effect, so adding it
@@ -160,7 +160,7 @@ autocorrelation once DMAs are summed).
    entering it as Meridian's ROI prior moves Search from 1.42 to 1.63, close to the truth.
    Calibration only helps if the experiment measures the same quantity the model reports.
 3. **Curve shape matters for allocation more than for ROI.** Hill and Logistic give similar TV and OOH ROI,
-   but Logistic cannot produce an S-shape, shrinks Social and TikTok, and changes the recommended budget.
+   but Logistic cannot produce an S-shape, shrinks YouTube and TikTok, and changes the recommended budget.
 4. **Meridian's fixed Hill slope.** With slope = 1 Meridian still gets TV's ROI right, but it cannot
    represent the frequency threshold, which matters for the shape of TV's response curve and so for planning.
 
@@ -170,12 +170,12 @@ autocorrelation once DMAs are summed).
 |---|---|---|---|---|---|
 | TV | +30% | +30% | +30% | +30% | +30% |
 | OOH | +1% | +1% | +15% | −30% | −30% |
-| Social | −15% | −12% | −16% | 0% | −2% |
+| YouTube | −15% | −12% | −16% | 0% | −2% |
 | Search | +11% | +7% | +8% | +3% | +6% |
 | TikTok | −30% | −30% | −30% | −30% | −30% |
 
 Every model agrees on the direction for the channels it measures well: move money from TikTok into TV, and
-add some to Search. They split on OOH and Social, the channels with the most uncertain curves. That is where
+add some to Search. They split on OOH and YouTube, the channels with the most uncertain curves. That is where
 a geo experiment would be worth running next. Meridian estimates the reallocation would raise incremental
 revenue by about 3%.
 
@@ -196,9 +196,12 @@ data pipeline  ->  model runs (per brand / market)  ->  stored posterior results
 1. **Curve design:** set carryover and saturation for a channel and see a single week's decay, the response
    curve with its marginal return, and how a flighting plan turns into response over time. These shapes are
    checked before modeling and inform the priors.
-2. **Model results:** model fit (R², MAPE and Durbin-Watson at national and DMA level), the weekly revenue
-   decomposition (base, seasonality, trend, holidays, promotion, macro, competition, each channel, residual)
-   and revenue driven by each channel.
+2. **Model results:** model fit (R², MAPE and Durbin-Watson at national and DMA level); the weekly revenue
+   decomposition (base, seasonality, trend, holidays, promotion, macro, competition, each channel, residual);
+   the revenue mix by driver group for year 1 vs year 2; a **year-over-year revenue bridge** showing how much each driver added or removed between year 1 and
+   year 2; and **channel efficiency**: ROI with its credible interval against break-even, and each channel's
+   share of spend next to its share of media-driven revenue; and a **channel scorecard** with absolute values
+   for both years (spend, cost per GRP or per 1,000 impressions, revenue per unit, incremental revenue, ROI).
 
 ![Curve design](results/dashboard_curves.png)
 ![Model results](results/dashboard_decomposition.png)

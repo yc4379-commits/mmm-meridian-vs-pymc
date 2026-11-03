@@ -21,7 +21,7 @@ from pymc_extras.prior import Prior
 from pymc_marketing.mmm import MMM, GeometricAdstock, HillSaturation, LogisticSaturation
 
 ROOT = Path(__file__).resolve().parents[1]
-CHANNELS = ["tv", "ooh", "social", "search", "tiktok"]
+CHANNELS = ["tv", "ooh", "youtube", "search", "tiktok"]
 SPEND = [f"{c}_spend" for c in CHANNELS]
 # Baseline controls: trend, holidays, promotions, macro, competition (seasonality via Fourier terms)
 CONTROLS = ["trend", "holiday_peak", "holiday_dip", "promo", "unemployment", "competitor_pressure"]
@@ -31,7 +31,7 @@ LOGISTIC = "--logistic" in sys.argv
 
 # Adstock retention priors per channel, from channel knowledge:
 # TV slow decay, Search almost none, others in between (Beta mean = a / (a + b))
-ALPHA_A = [3.0, 1.0, 1.0, 1.0, 1.0]   # tv, ooh, social, search, tiktok
+ALPHA_A = [3.0, 1.0, 1.0, 1.0, 1.0]   # tv, ooh, youtube, search, tiktok
 ALPHA_B = [2.0, 3.0, 3.0, 6.0, 3.0]   # means: 0.60, 0.25, 0.25, 0.14, 0.25
 
 
