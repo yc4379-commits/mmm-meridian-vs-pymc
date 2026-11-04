@@ -4,6 +4,8 @@ A side-by-side comparison of the two main open-source Bayesian Marketing Mix Mod
 [Google Meridian](https://github.com/google/meridian) and [PyMC-Marketing](https://github.com/pymc-labs/pymc-marketing),
 plus a small dashboard showing how model outputs reach stakeholders.
 
+Demo Website: https://mmm-meridian-vs-pymc.streamlit.app/
+
 Both packages are fit to the **same simulated dataset with a known ground truth**, so we can check what each
 one recovers, how experiment calibration changes the answer, and how the choice of curve shape matters.
 
