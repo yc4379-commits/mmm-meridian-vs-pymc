@@ -4,8 +4,8 @@ Tab 1  Curve setup    shape the two media transformations before modeling:
                       adstock (carryover) and Hill saturation (diminishing returns),
                       and see how a flighting plan turns into a response over time.
                       These shapes inform the priors of the Bayesian model.
-Tab 2  Model results  weekly revenue decomposition from the fitted PyMC-Marketing model:
-                      base, seasonality, trend, holidays, promotion, macro, competition, each channel, residual;
+Tab 2  Model results  weekly revenue decomposition from the fitted PyMC-Marketing model, grouped into
+                      base (incl. price, seasonality, holidays, macro), trade & promotion, competition, paid media;
                       a year-over-year revenue bridge and channel efficiency (ROI, spend vs effect share).
 
 Run:  streamlit run app/dashboard.py
@@ -68,13 +68,13 @@ INDIGO, SKY, ROSE, EMERALD, AMBER, INK = "#4F46E5", "#0EA5E9", "#F43F5E", "#10B9
 COLORS = {
     "Base": "#E3E7F7", "Seasonality": "#CBD3F2", "trend": "#B3BEEB",
     "holiday_peak": "#FCD9A0", "holiday_dip": "#FBC4A0", "promo": "#F9B4C8", "unemployment": "#9DDCE8",
-    "competitor_pressure": "#C4B5FD", "organic_social": "#A7F3D0",
+    "competitor_pressure": "#C4B5FD", "organic_social": "#A7F3D0", "base_price": "#D9C2A7",
     "tv": INDIGO, "ooh": SKY, "youtube": ROSE, "search": EMERALD, "tiktok": AMBER,
     "Residual": "#FECACA",
 }
 LABELS = {"trend": "Trend", "holiday_peak": "Holiday (peak)", "holiday_dip": "Holiday (dip)",
           "promo": "Promotion", "unemployment": "Macro: unemployment",
-          "competitor_pressure": "Competition", "organic_social": "Organic social", "tv": "TV", "youtube": "YouTube",
+          "competitor_pressure": "Competition", "organic_social": "Organic social", "base_price": "Base price", "Base": "Core base", "Seasonality": "Seasonality", "tv": "TV", "youtube": "YouTube",
           "search": "Search", "tiktok": "TikTok", "ooh": "OOH"}
 
 
@@ -203,6 +203,19 @@ def add_organic_social(d: pd.DataFrame) -> None:
     d["Base"] -= d["organic_social"]
 
 
+def add_base_price(d: pd.DataFrame) -> None:
+    """Illustrative only: a base-price effect carved out of the modeled base. List price rises
+    about 5% early in year 2 (elasticity about -1.2), so the effect turns negative; totals are unchanged."""
+    if "base_price" in d:
+        return
+    n = len(d)
+    rng = np.random.default_rng(11)
+    price_idx = 1 + np.where(np.arange(n) >= 58, 0.05, 0.0) + rng.normal(0, 0.004, n)
+    price_idx /= price_idx[:52].mean()
+    d["base_price"] = d["Base"].values * -1.2 * (price_idx - 1)
+    d["Base"] -= d["base_price"]
+
+
 def decomposition_tab() -> None:
     d = load_decomposition().copy()
     # Show continuous drivers relative to their average, so "Base" holds the average level
@@ -213,6 +226,7 @@ def decomposition_tab() -> None:
             d[col] -= m
             d["Base"] += m
     add_organic_social(d)
+    add_base_price(d)
     media = [c for c in ["tv", "ooh", "youtube", "search", "tiktok"] if c in d.columns]
     controls = [c for c in d.columns if c not in ["date", "Actual", "Residual", *media]]
     order = controls + media + ["Residual"]
@@ -232,19 +246,32 @@ def decomposition_tab() -> None:
         st.caption("Durbin-Watson near 2 means residuals are not autocorrelated; well below 2 usually "
                    "points to a missing driver or too little carryover in the model.")
 
+    groups = {**GROUPS, "Paid media": media, "Residual": ["Residual"]}
+    st.markdown("**Weekly revenue decomposition**")
+    expand = st.multiselect(
+        "Break down", [g for g in groups if g != "Residual"], default=[],
+        placeholder="Pick groups to expand into their drivers",
+        help="Each group shows as one layer; pick a group to split it into its individual drivers.")
     fig = go.Figure()
-    for col in order:
-        fig.add_trace(go.Bar(x=d["date"], y=d[col], name=LABELS.get(col, col),
-                             marker_color=COLORS.get(col, "#888"), marker_line_width=0))
+    for g, cols in groups.items():
+        cols = [c for c in cols if c in d]
+        if g in expand and len(cols) > 1:
+            for c in cols:
+                fig.add_trace(go.Bar(x=d["date"], y=d[c], name=LABELS.get(c, c),
+                                     marker_color=DECOMP_COLORS.get(c, DECOMP_GROUP.get(g)),
+                                     marker_line_width=0))
+        else:
+            fig.add_trace(go.Bar(x=d["date"], y=d[cols].sum(axis=1), name=g,
+                                 marker_color=DECOMP_GROUP.get(g, "#CCCCCC"), marker_line_width=0))
     fig.add_trace(go.Scatter(x=d["date"], y=d["Actual"], name="Actual revenue", mode="lines",
-                             line=dict(color=INK, width=2)))
-    fig.update_layout(barmode="relative", height=480, bargap=0.05,
+                             line=dict(color=INK, width=1.6)))
+    fig.update_layout(barmode="relative", height=460, bargap=0.12,
                       yaxis_title="Weekly revenue ($)", margin=dict(l=10, r=10, t=10, b=60),
-                      legend=dict(orientation="h", y=-0.25))
+                      legend=dict(orientation="h", y=-0.2))
     st.plotly_chart(styled(fig), width="stretch", theme=None)
-    st.caption("Stacked weekly contributions (posterior means). Bars below zero are negative drivers "
-               "(holiday dips, a rival app's ad flights, weeks with above-average unemployment). The black line is actual revenue. "
-               "Organic social is an illustrative split of the base, not a fitted model term.")
+    st.caption("Weekly contributions (posterior means), grouped by driver; bars below zero are negative drivers "
+               "and the line is actual revenue. Base price and organic social are illustrative splits of the base, "
+               "not fitted model terms.")
 
     total = d[order].sum()
     st.markdown("**Where revenue came from, year 1 vs year 2**")
@@ -258,11 +285,20 @@ def decomposition_tab() -> None:
     channel_scorecard(d, media)
 
 
+# Softer palette for the decomposition chart: one hue per group, shades within a group
+DECOMP_GROUP = {"Base": "#CDD3E3", "Base price": "#DCC8AC", "Trade & promotion": "#E7B9C1",
+                "Seasonality & holidays": "#F1D6A2", "Competition": "#BDB3DE", "Macro": "#AFD6DF",
+                "Organic social": "#BBDDC9", "Paid media": "#7C8BD6", "Residual": "#EBD5D5"}
+DECOMP_COLORS = {"Base": "#CDD3E3", "trend": "#AEB7CF",
+                 "Seasonality": "#F1D6A2", "holiday_peak": "#E5BD72", "holiday_dip": "#F7E7C6",
+                 "base_price": "#DCC8AC", "unemployment": "#AFD6DF", "organic_social": "#BBDDC9",
+                 "tv": "#4E5DAE", "ooh": "#6C7BCB", "youtube": "#8D9ADB", "search": "#AFB9E8", "tiktok": "#D0D7F2"}
+
 # Driver groups for the year-over-year bridge
-GROUPS = {"Organic baseline": ["Base", "trend"],
-          "Calendar": ["Seasonality", "holiday_peak", "holiday_dip"],
-          "Promotion": ["promo"], "Macro": ["unemployment"], "Competition": ["competitor_pressure"],
-          "Organic social": ["organic_social"]}
+GROUPS = {"Base": ["Base", "trend", "base_price", "Seasonality", "holiday_peak", "holiday_dip", "unemployment",
+                   "organic_social"],
+          "Trade & promotion": ["promo"],
+          "Competition": ["competitor_pressure"]}
 
 
 def revenue_bridge(d: pd.DataFrame, media: list[str]) -> None:
@@ -288,9 +324,7 @@ def revenue_bridge(d: pd.DataFrame, media: list[str]) -> None:
                "driver's contribution; green adds revenue, red takes it away.")
 
 
-GROUP_COLORS = {"Organic baseline": "#E3E7F7", "Calendar": "#FCD9A0", "Promotion": "#F9B4C8",
-                "Macro": "#9DDCE8", "Competition": "#C4B5FD", "Organic social": "#A7F3D0",
-                "Paid media": INDIGO}
+GROUP_COLORS = DECOMP_GROUP
 
 
 def revenue_mix(d: pd.DataFrame, media: list[str]) -> None:
@@ -328,7 +362,7 @@ def revenue_mix(d: pd.DataFrame, media: list[str]) -> None:
                     hide_index=True, width="stretch")
     right.caption("Negative values (competition, weeks of high unemployment) sit below zero in the chart. "
                   "Trend and unemployment are measured against their two-year average, so their "
-                  "average level is part of the organic baseline.")
+                  "average level is part of the base.")
 
 
 @st.cache_data
